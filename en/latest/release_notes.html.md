@@ -6,19 +6,182 @@
 
 ### Enhancements
 
+* Standardized how distributed `datapackage.json` descriptors are produced. FERC EQR
+  now has its own package, `FERCEQR_PACKAGE`, and a dedicated `ferceqr_datapackage`
+  asset built with the same factory as `pudl_datapackage`. Descriptors list only the
+  sources their tables use and describe partitioned tables with per-partition `bytes`
+  and `hash` entries. Each quarterly FERC EQR archive is now verified against the md5
+  checksum in its Zenodo metadata, and downloading archives from remote storage
+  requires setting `PUDL_FERCEQR_ALLOW_DOWNLOADS`. See [#5279](https://github.com/catalyst-cooperative/pudl/issues/5279) and [#5693](https://github.com/catalyst-cooperative/pudl/pull/5693).
+
 ### New Data
 
 ### Expanded Data Coverage
+
+#### EIA-191
+
+* Updated [EIA-191](data_sources/eia191.html.md) data through August 2026. See issue
+  [#5742](https://github.com/catalyst-cooperative/pudl/issues/5742) and PR [#5743](https://github.com/catalyst-cooperative/pudl/pull/5743).
+
+#### EIA-860M
+
+* Added [EIA-860m](data_sources/eia860.html.md) data through September 2026. See
+  PR [#5732](https://github.com/catalyst-cooperative/pudl/pull/5732).
+
+#### EIA-923
+
+* Added [EIA-923](data_sources/eia923.html.md) data through August 2026. See
+  PR [#5732](https://github.com/catalyst-cooperative/pudl/pull/5732).
+
+#### EIA-930
+
+* Updated [EIA-930](data_sources/eia930.html.md) data through the beginning of November
+  2026. See issue [#5742](https://github.com/catalyst-cooperative/pudl/issues/5742) and PR [#5743](https://github.com/catalyst-cooperative/pudl/pull/5743).
+
+#### EIA API Bulk Electricity Data
+
+* Updated the [EIA API](data_sources/eiaapi.html.md) bulk electricity data through August
+  2026. See issue [#5742](https://github.com/catalyst-cooperative/pudl/issues/5742) and PR [#5743](https://github.com/catalyst-cooperative/pudl/pull/5743).
+
+#### EPA CEMS
+
+* Updated the [EPA CEMS](data_sources/epacems.html.md) with data through 2026 Q3
+  (September, 2026). See issue [#5742](https://github.com/catalyst-cooperative/pudl/issues/5742) and PR [#5748](https://github.com/catalyst-cooperative/pudl/pull/5748).
+
+#### EPA MATS
+
+* Updated the raw EPA MATS archive with data through 2026 Q3 (September, 2026). This
+  data is not yet deeply integrated into PUDL. See issue [#5742](https://github.com/catalyst-cooperative/pudl/issues/5742) and PR
+  [#5748](https://github.com/catalyst-cooperative/pudl/pull/5748).
+
+#### FERC CID
+
+* Updated the FERC company identifiers to the October 2026 release. See issue
+  [#5742](https://github.com/catalyst-cooperative/pudl/issues/5742) and PR [#5743](https://github.com/catalyst-cooperative/pudl/pull/5743).
+
+#### FERC Forms 2 and 6
+
+* Re-archived the raw [FERC Form 2](data_sources/other_data.html.md#data-ferc2) and [FERC Form 6](data_sources/other_data.html.md#data-ferc6) XBRL data. Coverage still ends with 2025. This data is converted to
+  SQLite, but not deeply integrated into PUDL. See issue [#5742](https://github.com/catalyst-cooperative/pudl/issues/5742) and PR
+  [#5743](https://github.com/catalyst-cooperative/pudl/pull/5743).
+
+#### PHMSA
+
+* Updated the raw [PHMSA](data_sources/phmsagas.html.md) archive with revised records.
+  Coverage still ends with 2025. See issue [#5742](https://github.com/catalyst-cooperative/pudl/issues/5742) and PR [#5743](https://github.com/catalyst-cooperative/pudl/pull/5743).
 
 ### Documentation
 
 ### New Data Tests & Validations
 
+* Updated `dbt` data validation now to support FERC EQR data. This requires `dbt`
+  configuration changes to handle partitioned parquet outputs. See issue [#4864](https://github.com/catalyst-cooperative/pudl/pull/4864)
+  and PR [#5676](https://github.com/catalyst-cooperative/pudl/pull/5676). This PR also applies basic validation tests to FERC EQR tables,
+  including row count tests.
+* Updated `dbt` data validation to support FERC EQR, whose partitioned parquet outputs
+  required several configuration changes. The `external_location` of each table is now
+  generated automatically, row count tests accept string partition keys such as
+  `year_quarter`, and `dbt_helper` can generate row counts for partitioned tables.
+  Validation tests can also run against remote parquet datasets without downloading the
+  files, and the FERC EQR deployment asset now runs the EQR validations before
+  publishing. All FERC EQR tables get basic validation tests, including row counts. See
+  [#4864](https://github.com/catalyst-cooperative/pudl/issues/4864) and [#5676](https://github.com/catalyst-cooperative/pudl/pull/5676).
+* Validate that the net utility plant, total other property and investments, and total
+  assets in [core_rus7_\_yearly_balance_sheet_assets](data_dictionaries/pudl_db.html.md#core-rus7-yearly-balance-sheet-assets) and
+  [out_rus7_\_yearly_balance_sheet_assets](data_dictionaries/pudl_db.html.md#out-rus7-yearly-balance-sheet-assets) equal the sum of their subcomponents.
+  The existing `total_utility_plant` and `total_current_and_accrued` tests no longer
+  allow any failures. See [#5566](https://github.com/catalyst-cooperative/pudl/issues/5566) and [#5729](https://github.com/catalyst-cooperative/pudl/pull/5729).
+
 ### Bug Fixes & Data Cleaning
+
+* Added a missing US minor outlying islands territory entry to the
+  [core_pudl_\_codes_subdivisions](data_dictionaries/pudl_db.html.md#core-pudl-codes-subdivisions) table. See [#5696](https://github.com/catalyst-cooperative/pudl/issues/5696) and [#5716](https://github.com/catalyst-cooperative/pudl/pull/5716).
+* Restored non-utility property (RUS Form 7 Part C, line 6) to
+  [core_rus7_\_yearly_balance_sheet_assets](data_dictionaries/pudl_db.html.md#core-rus7-yearly-balance-sheet-assets) and
+  [out_rus7_\_yearly_balance_sheet_assets](data_dictionaries/pudl_db.html.md#out-rus7-yearly-balance-sheet-assets). A typo in the column map
+  (`non_utility_property_asset`) meant the transform never picked it up. See
+  [#5566](https://github.com/catalyst-cooperative/pudl/issues/5566) and [#5729](https://github.com/catalyst-cooperative/pudl/pull/5729).
+* Restored non-utility property (RUS Form 12 Section B, line 6) to
+  [core_rus12_\_yearly_balance_sheet_assets](data_dictionaries/pudl_db.html.md#core-rus12-yearly-balance-sheet-assets) and
+  [out_rus12_\_yearly_balance_sheet_assets](data_dictionaries/pudl_db.html.md#out-rus12-yearly-balance-sheet-assets). As in RUS 7, a typo in the column map
+  (`non_utility_property_asset`) meant the transform never picked it up, and the
+  RUS 12 `asset_type` values are corrected to match. See [#5737](https://github.com/catalyst-cooperative/pudl/pull/5737), a follow-up to
+  [#5729](https://github.com/catalyst-cooperative/pudl/pull/5729).
+* Added `plant_function` values to a few factoids in
+  [out_ferc1_\_yearly_rate_base](data_dictionaries/pudl_db.html.md#out-ferc1-yearly-rate-base). See [#5690](https://github.com/catalyst-cooperative/pudl/pull/5690).
+* Made transforms in FERC 1, FERC 714, SEC 10-K, PHMSA, RUS and the EIA API extractor
+  behave identically under pandas 2 and 3 by replacing in-place, chained and
+  dtype-changing assignments. Along the way: the PHMSA operators cleanup no longer
+  nulls non-string values like numeric zip codes. SEC 10-K ownership percentages no
+  longer misread leader dots (`"...99"` was 0.0099, now 0.99), and
+  `fraction_owned` is now always within 0-1, with out-of-range values (about 9% of
+  non-null values, e.g. adjacent percentages run together) set to null and a field
+  constraint enforcing the range. `drop_invalid_rows()` has a new `dropna` argument
+  (default True) instead of requiring null values in `invalid_values`; outputs are
+  unchanged. See [#5616](https://github.com/catalyst-cooperative/pudl/issues/5616), [#5623](https://github.com/catalyst-cooperative/pudl/issues/5623) and [#5720](https://github.com/catalyst-cooperative/pudl/pull/5720).
+* `X` in the EIA-861 dynamic pricing time-of-use, critical peak, real time and
+  variable peak columns is now treated as `True` (a checked box) instead of being
+  turned into a null, which changes four 2018 rows of
+  `core_eia861__yearly_dynamic_pricing`. All EIA-861 Y/N flag columns now share one
+  case-insensitive conversion to booleans, so a lowercase `y` or `n` is no longer
+  turned into a null in a few `core_eia861__yearly_reliability` rows, and unexpected
+  codes other than Y, N and X raise an error. See [#5617](https://github.com/catalyst-cooperative/pudl/issues/5617), [#5601](https://github.com/catalyst-cooperative/pudl/issues/5601) and
+  [#5718](https://github.com/catalyst-cooperative/pudl/pull/5718).
+* Fixed the 2007-2011 EIA-861 advanced metering infrastructure column map, which was
+  loading the utility ownership codes (e.g. `C` for cooperative) into `short_form`
+  and leaving `entity_type` null. Those years of
+  `core_eia861__yearly_advanced_metering_infrastructure` now have `entity_type`
+  populated and `short_form` null. See [#5617](https://github.com/catalyst-cooperative/pudl/issues/5617) [#5718](https://github.com/catalyst-cooperative/pudl/pull/5718).
+* When EIA-861 rows for the withheld utility 88888 are combined, boolean columns are
+  no longer summed, nulls are now compatible with non-null values, and the row kept
+  when values conflict no longer depends on input row order, which may change a few
+  rows in several EIA-861 tables. See [#5612](https://github.com/catalyst-cooperative/pudl/issues/5612) and [#5718](https://github.com/catalyst-cooperative/pudl/pull/5718).
+* Made the EIA-923 transforms behave the same under pandas 3: date and month columns
+  are now assigned directly instead of through chained `.loc` assignment, and the
+  numeric columns summed when de-duplicating EIA-923 generation fuel rows are
+  explicitly cast to `float64`. See [#5619](https://github.com/catalyst-cooperative/pudl/issues/5619), [#5620](https://github.com/catalyst-cooperative/pudl/issues/5620) and
+  [#5719](https://github.com/catalyst-cooperative/pudl/pull/5719).
+* Made null handling in `stack_generators()`, the EIA-176 “other” gas disposition
+  categorization and the EIA-860 ownership spot-fix behave identically under pandas 2
+  and 3. Pandas 3 changed how nulls are treated by `stack()`, `astype(str)` and
+  string comparisons, which would otherwise have left spurious null energy sources,
+  null primary keys, or unremoved bogus ownership records. See [#5621](https://github.com/catalyst-cooperative/pudl/issues/5621),
+  [#5622](https://github.com/catalyst-cooperative/pudl/issues/5622), [#5624](https://github.com/catalyst-cooperative/pudl/issues/5624) and [#5721](https://github.com/catalyst-cooperative/pudl/pull/5721).
+* Stop `make_changelog()` from dropping records whose values reverted to an earlier
+  state (e.g. `OP` -> `OA` -> `OP`), leaving the intermediate value looking like a
+  permanent change. This adds 3-7% more rows to
+  [core_eia860m_\_changelog_generators](data_dictionaries/pudl_db.html.md#core-eia860m-changelog-generators) and the entity resolution forensics tables.
+  It also removes empty `valid_until_date` intervals, and ensures every series ends
+  on the same date – one month past the entity’s final report date. See [#5730](https://github.com/catalyst-cooperative/pudl/issues/5730)
+  and [#5731](https://github.com/catalyst-cooperative/pudl/pull/5731).
 
 ### Performance Improvements
 
 ### Developer Experience
+
+* The FERC DBF field types we can’t convert to SQL column types are now listed apart
+  from the ones we can, instead of being mixed in as placeholder strings. A field of an
+  unsupported type fails immediately with an error naming the type, field and table.
+  See [#5734](https://github.com/catalyst-cooperative/pudl/pull/5734).
+* Plant part record IDs for records with a null `utility_id_eia` now end in `null`
+  instead of `<NA>` (or `<na>`), consistent with the rest of the ID. This changes
+  `record_id_eia` and `plant_part_id_eia` in `out_eia__yearly_plant_parts` and the
+  related plant-part association tables for a few hundred records. See [#5598](https://github.com/catalyst-cooperative/pudl/issues/5598) and
+  [#5721](https://github.com/catalyst-cooperative/pudl/pull/5721).
+* Replaced the standalone `pixi run unmapped-ids` pytest task with analogous Dagster
+  assets ([`pudl.dagster.assets.core.unmapped_ids`](autoapi/pudl/dagster/assets/core/unmapped_ids/index.html.md#module-pudl.dagster.assets.core.unmapped_ids)) that identify FERC1 and EIA
+  plant/utility IDs missing from the manual PUDL ID mapping spreadsheet. CSVs are saved
+  with other build outputs on `builds.catalyst.coop` and fail the ETL if they are
+  non-empty. See issue [#4338](https://github.com/catalyst-cooperative/pudl/issues/4338) and PR [#5539](https://github.com/catalyst-cooperative/pudl/pull/5539).
+* Added a `DATAPACKAGES` registry of every datapackage PUDL distributes, with
+  `all_resources()` and `find_resource()` helpers, so asset checks, the docs, the
+  data dictionary, dbt tooling and a DuckDB views database per package cover FERC EQR as
+  well as the main PUDL tables. Every `<name>_datapackage` asset now has blocking
+  checks that validate its descriptor and compare the declared fields with the columns
+  in its Parquet files, and Pandera schemas are strict. This exposed a redundant
+  `filing_quarter` column in [core_ferceqr_\_quarterly_identity](data_dictionaries/pudl_db.html.md#core-ferceqr-quarterly-identity) which was
+  removed. The datapackage and `deploy_ferceqr` assets also record richer Dagster
+  metadata. See [#5279](https://github.com/catalyst-cooperative/pudl/issues/5279) and [#5735](https://github.com/catalyst-cooperative/pudl/pull/5735).
 
 <a id="release-v2026-10-0"></a>
 
